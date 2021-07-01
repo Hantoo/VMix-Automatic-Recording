@@ -1,0 +1,69 @@
+' VMIX Automatic Recording Scheduler Script - Written By Joel Luther-Braun | joellutherbraun.com
+' This script allows you to put in days of the weeks and times within a day to start and stop a recording.
+' To use this script you need to have VMIX 4K or VMIX Pro edition which allows for scripting
+' To make this run automatically give the script a title/name when adding it to the script, assign a web browser video input to vmix and
+' assign the below URL to the webbrowser, with [ScriptName] being replaced with the title you gave the script.
+' http://127.0.0.1:8088/api/?Function=ScriptStart&Value=[ScriptName]
+
+' User Variables
+
+' Please Edit recordingSchedule array. Each {} inside the outer brackets are days.
+' E.g. the below array shows a recording starting on Sunday, from 11:00 to 13:00, another recording on
+' Thursday from 17:17 to 18:00, and another recording on Thursday from 19:41 to 20:30
+' Format the array as shown below. Day numbers are as follows: 0 = Sunday, 1 = Monday ... 6 = Saturday
+' {Day Number, Start Hour, Start Min, End Hour, End Min}
+
+Dim recordingSchedule(,) As Integer = {{0,11,00,13,00},{0,13,36,13,37},{0,13,40,13,43},{0,18,40,19,30},{1,01,40,02,00},{1,09,30,10,30}}
+
+
+' =========================================================================================================
+' =============================== Main Code - Do Not Edit Below This Point ================================
+' =========================================================================================================
+
+dim startedRecording as Boolean = False
+dim recordingNumber as Integer = -1
+Dim recordingScheduleInSeconds(recordingSchedule.GetLength(0),3) As Integer
+Console.WriteLine(string.Format("Today is Day {0} = {1} - The time is: {2} : {3}", DateTime.Now.DayOfWeek.toString() ,CInt(DateTime.Now.DayOfWeek), DateTime.Now.Hour, DateTime.Now.Minute))
+
+' Go through all user defined timings and convert them to seconds
+
+For i As Integer = 0 To recordingSchedule.GetLength(0) - 1
+   Dim day as DayOfWeek = recordingSchedule(i,0)
+   Console.WriteLine(string.Format("Recording Scheduled For {0} At {1} : {2} to {3} : {4} ", day.toString(), recordingSchedule(i,1), recordingSchedule(i,2), recordingSchedule(i,3), recordingSchedule(i,4)))
+   recordingScheduleInSeconds(i, 0) = recordingSchedule(i,0)
+   recordingScheduleInSeconds(i, 1) = ((recordingSchedule(i,1) * 60) * 60) + (recordingSchedule(i,2) * 60)
+   recordingScheduleInSeconds(i, 2) = ((recordingSchedule(i,3) * 60) * 60) + (recordingSchedule(i,4) * 60)
+Next
+
+
+' Go through each scheduled time and check if its the right day
+dim currentTimeInSeconds as Integer
+
+Do
+  For i As Integer = 0 To recordingSchedule.GetLength(0) - 1
+    If DateTime.Now.DayOfWeek = recordingScheduleInSeconds(i,0) Then
+   
+      ' If its the right day for a recording check the current system time in seconds and compare that against when the recording should start in seconds
+   
+      currentTimeInSeconds = (((DateTime.Now.Hour * 60) * 60) + (DateTime.Now.Minute * 60)) + DateTime.Now.Second
+      ' Console.WriteLine(string.Format("Time Start {0}, End {1}, Current {2} ", recordingScheduleInSeconds(i,1), recordingScheduleInSeconds(i,2), currentTimeInSeconds))
+   
+         If currentTimeInSeconds >= recordingScheduleInSeconds(i,1) And currentTimeInSeconds < recordingScheduleInSeconds(i,2) And startedRecording = False
+                Console.WriteLine("Started Recording")
+                startedRecording = True
+                recordingNumber = i
+                API.Function("StartRecording")
+         End If
+         
+         ' If a recording is running, then check if its the time to end that recording
+         
+         If recordingNumber = i And recordingScheduleInSeconds(i,2) <= currentTimeInSeconds And startedRecording = True
+             Console.WriteLine("Stopped Recording")
+             API.Function("StopRecording")
+             recordingNumber = -1
+             startedRecording = False
+         End If
+    End If
+  Next
+  Sleep(1000)
+Loop While True
