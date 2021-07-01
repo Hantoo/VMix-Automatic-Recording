@@ -4,7 +4,7 @@ Automatic recording for VMIX based on day of the week and time of day
 Copy the contents and paste it into a new script file within VMix. Settings > Scripting > New.
 Within the script there are instructions on how to use it.
 
-Change the line that matches below (line 16) to suit your need. The syntax is as follows: {DAY, START HOUR, START MIN, END HOUR, END MIN}
+Change the line that matches below (line 16) to suit your need. The syntax is as follows: {DAY, START HOUR, START MIN, END HOUR, END MIN}  
 Dim recordingSchedule(,) As Integer = {{0,11,00,13,00},{0,13,36,13,37},{0,13,40,13,43},{0,18,40,19,30},{1,01,40,02,00},{1,09,30,10,30}}
 
 If I only wanted to record the 6:30PM service on a Sunday the line would look as follows:
